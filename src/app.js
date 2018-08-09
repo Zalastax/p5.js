@@ -77,7 +77,7 @@ require('./webgl/material');
 require('./webgl/p5.Geometry');
 require('./webgl/p5.Matrix');
 require('./webgl/p5.RendererGL.Immediate');
-require('./webgl/p5.RendererGL');
+require('./webgl/p5.RendererGL.augment');
 require('./webgl/p5.RendererGL.Retained');
 require('./webgl/p5.Shader');
 require('./webgl/p5.Texture');

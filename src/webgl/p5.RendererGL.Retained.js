@@ -3,6 +3,7 @@
 'use strict';
 
 var p5 = require('../core/main');
+require('./p5.RendererGL.augment');
 
 var hashCount = 0;
 /**
