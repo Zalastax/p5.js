@@ -214,7 +214,7 @@ module.exports = function(grunt) {
     watch: {
       quick: {
         files: ['src/**/*.js', 'src/**/*.frag', 'src/**/*.vert'],
-        tasks: ['browserify'],
+        tasks: ['rollup'],
         options: {
           livereload: true
         }
@@ -246,8 +246,8 @@ module.exports = function(grunt) {
           'src/**/*.vert'
         ],
         tasks: [
-          'browserify',
-          'browserify:min',
+          'rollup',
+          'rollup:min',
           'yuidoc:prod',
           'clean:reference',
           'minjson',
@@ -408,7 +408,7 @@ module.exports = function(grunt) {
   grunt.initConfig(gruntConfig);
 
   // Load build tasks.
-  // This contains the complete build task ("browserify")
+  // This contains the complete build task ("rollup")
   // and the task to generate user select modules of p5
   // ("combineModules") which can be invoked directly by
   // `grunt combineModules:module_1:module_2` where core
@@ -441,7 +441,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
 
   // Create the multitasks.
-  grunt.registerTask('build', ['browserify', 'browserify:min', 'uglify']);
+  grunt.registerTask('build', ['rollup', 'rollup:min', 'uglify']);
   grunt.registerTask('lint-no-fix', [
     'yui', // required for eslint-samples
     'eslint:build',

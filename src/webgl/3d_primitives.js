@@ -11,6 +11,7 @@
 var p5 = require('../core/main');
 require('./p5.Geometry');
 var constants = require('../core/constants');
+require('./p5.RendererGL.augment');
 
 /**
  * Draw a plane with given a width and height

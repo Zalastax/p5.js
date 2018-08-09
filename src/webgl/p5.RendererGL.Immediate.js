@@ -15,6 +15,7 @@
 
 var p5 = require('../core/main');
 var constants = require('../core/constants');
+require('./p5.RendererGL.augment');
 
 /**
  * Begin shape drawing.  This is a helpful way of generating

@@ -2,24 +2,75 @@
 
 var fs = require('fs');
 var path = require('path');
-var browserify = require('browserify');
-var derequire = require('derequire');
+var rollup = require('../utils/rollup');
+var commonjs = require('rollup-plugin-commonjs');
+var multiEntry = require('rollup-plugin-multi-entry');
+var string = require('rollup-plugin-string');
+var nodeResolve = require('rollup-plugin-node-resolve');
+var json = require('rollup-plugin-json');
+
+function inputOptions(srcFilePath) {
+  return {
+    input: srcFilePath,
+    plugins: [
+      multiEntry(),
+      string({
+        include: ['**/*.vert', '**/*.frag']
+      }),
+      json(),
+      nodeResolve({
+        browser: true,
+        main: true,
+        jsnext: false,
+        module: false
+      }),
+      commonjs()
+    ],
+    context: 'window'
+  };
+}
+
+// TODO: Make this method less brittle to changes in app.js or explicitly mention it in app.js
+function sourcesInApp() {
+  // Make a list of sources from app.js in that sequence only
+  var sources = [];
+  var dump = fs.readFileSync('./src/app.js', 'utf8');
+  var regexp = /require\('\.\/(.+)'\)/g;
+  var match;
+  while ((match = regexp.exec(dump)) != null) {
+    sources.push(match[1]);
+  }
+
+  return sources;
+}
+
+// TODO: Evaluate if this is the best way to find the files for each module
+function srcFilePaths(modules) {
+  var srcDirPath = './src';
+  return sourcesInApp()
+    .map(function(source) {
+      var base = source.substring(0, source.lastIndexOf('/'));
+      if (base === 'core' || modules.includes(base)) {
+        var filePath = source.search('.js') !== -1 ? source : source + '.js';
+        return path.resolve(srcDirPath, filePath);
+      }
+    })
+    .filter(function(path) {
+      return path !== undefined;
+    });
+}
 
 module.exports = function(grunt) {
   grunt.registerTask(
     'combineModules',
-    'Compile and combine certain modules with Browserify',
-    function(args) {
+    'Compile and combine certain modules with rollup',
+    function() {
       // Reading and writing files is asynchronous
       var done = this.async();
 
+      var modules = Array.prototype.slice.call(arguments);
       // Module sources are space separated names in a single string (enter within quotes)
-      var module_src,
-        temp = [];
-      for (var i in arguments) {
-        temp.push(arguments[i]);
-      }
-      module_src = temp.join(', ');
+      var module_src = modules.join(', ');
 
       // Render the banner for the top of the file. Includes the Module name.
       var bannerTemplate =
@@ -28,61 +79,16 @@ module.exports = function(grunt) {
         '*/';
       var banner = grunt.template.process(bannerTemplate);
 
-      // Make a list of sources from app.js in that sequence only
-      var sources = [];
-      var dump = fs.readFileSync('./src/app.js', 'utf8');
-      var regexp = /\('.+'/g;
-      var match;
-      while ((match = regexp.exec(dump)) != null) {
-        var text = match[0];
-        text = text.substring(text.indexOf('./') + 2, text.length - 1);
-        sources.push(text);
-      }
-
-      // Populate the source file path array with concerned files' path
-      var srcDirPath = './src';
-      var srcFilePath = [];
-      for (var j = 0; j < sources.length; j++) {
-        var source = sources[j];
-        var base = source.substring(0, source.lastIndexOf('/'));
-        if (base === 'core' || module_src.search(base) !== -1) {
-          // Push the resolved paths directly
-          var filePath = source.search('.js') !== -1 ? source : source + '.js';
-          var fullPath = path.resolve(srcDirPath, filePath);
-          srcFilePath.push(fullPath);
-        }
-      }
-
-      console.log(srcFilePath);
       // Target file path
-      var libFilePath = path.resolve('lib/modules/p5Custom.js');
+      var libFilePath = path.resolve('./lib/modules/p5Custom.js');
 
-      // Invoke Browserify programatically to bundle the code
-      var bundle = browserify(srcFilePath, {
-        standalone: 'p5'
-      })
-        .transform('brfs')
-        .bundle();
-
-      // Start the generated output with the banner comment,
-      var code = banner + '\n';
-
-      // Then read the bundle into memory so we can run it through derequire
-      bundle
-        .on('data', function(data) {
-          code += data;
-        })
-        .on('end', function() {
-          grunt.file.write(libFilePath, derequire(code));
-
-          // Print a success message
-          grunt.log.writeln(
-            '>>'.green + ' Module ' + libFilePath.blue + ' created.'
-          );
-
-          // Complete the task
-          done();
-        });
+      return rollup.build(
+        grunt,
+        done,
+        banner,
+        inputOptions(srcFilePaths(modules)),
+        libFilePath
+      );
     }
   );
 };

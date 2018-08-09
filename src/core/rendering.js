@@ -10,7 +10,7 @@ var p5 = require('./main');
 var constants = require('./constants');
 require('./p5.Graphics');
 require('./p5.Renderer2D');
-require('../webgl/p5.RendererGL');
+require('../webgl/p5.RendererGL.augment');
 var defaultId = 'defaultCanvas0'; // this gets set again in createCanvas
 var defaultClass = 'p5Canvas';
 
